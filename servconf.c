@@ -698,7 +698,7 @@ static struct {
 	{ "requiredrsasize", sRequiredRSASize, SSHCFG_ALL },
 	{ "channeltimeout", sChannelTimeout, SSHCFG_ALL },
 	{ "unusedconnectiontimeout", sUnusedConnectionTimeout, SSHCFG_ALL },
-	{ "shellpath", sShellPath, SSHCFG_MATCH_ONLY },
+	{ "shellpath", sShellPath, SSHCFG_MATCH },
 	{ NULL, sBadOption, 0 }
 };
 
