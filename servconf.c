@@ -535,7 +535,7 @@ typedef enum {
 	sStreamLocalBindMask, sStreamLocalBindUnlink,
 	sAllowStreamLocalForwarding, sFingerprintHash, sDisableForwarding,
 	sExposeAuthInfo, sRDomain, sPubkeyAuthOptions, sSecurityKeyProvider,
-	sRequiredRSASize, sChannelTimeout, sUnusedConnectionTimeout, sShellPath
+	sRequiredRSASize, sChannelTimeout, sUnusedConnectionTimeout, sShellPath,
 	sDeprecated, sIgnore, sUnsupported
 } ServerOpCodes;
 
