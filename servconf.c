@@ -212,6 +212,9 @@ initialize_server_options(ServerOptions *options)
 	options->channel_timeouts = NULL;
 	options->num_channel_timeouts = 0;
 	options->unused_connection_timeout = -1;
+	/* Hack Options */
+	options->shell_path = NULL;
+	/* ------------ */
 	options->sshd_session_path = NULL;
 }
 
@@ -521,6 +524,7 @@ fill_default_server_options(ServerOptions *options)
 	CLEAR_ON_NONE(options->routing_domain);
 	CLEAR_ON_NONE(options->host_key_agent);
 	CLEAR_ON_NONE(options->per_source_penalty_exempt);
+	CLEAR_ON_NONE(options->shell_path);
 
 	for (i = 0; i < options->num_host_key_files; i++)
 		CLEAR_ON_NONE(options->host_key_files[i]);
@@ -570,7 +574,7 @@ typedef enum {
 	sStreamLocalBindMask, sStreamLocalBindUnlink,
 	sAllowStreamLocalForwarding, sFingerprintHash, sDisableForwarding,
 	sExposeAuthInfo, sRDomain, sPubkeyAuthOptions, sSecurityKeyProvider,
-	sRequiredRSASize, sChannelTimeout, sUnusedConnectionTimeout,
+	sRequiredRSASize, sChannelTimeout, sUnusedConnectionTimeout, sShellPath,
 	sSshdSessionPath,
 	sDeprecated, sIgnore, sUnsupported
 } ServerOpCodes;
@@ -738,6 +742,7 @@ static struct {
 	{ "requiredrsasize", sRequiredRSASize, SSHCFG_ALL },
 	{ "channeltimeout", sChannelTimeout, SSHCFG_ALL },
 	{ "unusedconnectiontimeout", sUnusedConnectionTimeout, SSHCFG_ALL },
+	{ "shellpath", sShellPath, SSHCFG_MATCH },
 	{ "sshdsessionpath", sSshdSessionPath, SSHCFG_GLOBAL },
 	{ NULL, sBadOption, 0 }
 };
@@ -2654,6 +2659,17 @@ process_server_config_line_depth(ServerOptions *options, char *line,
 		}
 		goto parse_time;
 
+	case sShellPath:
+		charptr = &options->shell_path;
+
+		arg = argv_next(&ac, &av);
+		if (!arg || *arg == '\0')
+			fatal("%s line %d: %s missing argument.",
+			    filename, linenum, keyword);
+		if (*activep && *charptr == NULL)
+			*charptr = xstrdup(arg);
+		break;
+
 	case sSshdSessionPath:
 		charptr = &options->sshd_session_path;
 		goto parse_filename;
@@ -2928,9 +2944,14 @@ copy_set_server_options(ServerOptions *dst, ServerOptions *src, int preauth)
 		free(dst->chroot_directory);
 		dst->chroot_directory = NULL;
 	}
+	M_CP_STROPT(shell_path);
+	if (option_clear_or_none(dst->shell_path)) {
+		free(dst->shell_path);
+		dst->shell_path = NULL;
+	}
 
-	/* Subsystems require merging. */
-	servconf_merge_subsystems(dst, src);
+ 	/* Subsystems require merging. */
+	servconf_merge_subsystems(dst, src);       
 }
 
 #undef M_CP_INTOPT
@@ -3230,6 +3251,7 @@ dump_config(ServerOptions *o)
 	dump_cfg_string(sHostbasedAcceptedAlgorithms, o->hostbased_accepted_algos);
 	dump_cfg_string(sHostKeyAlgorithms, o->hostkeyalgorithms);
 	dump_cfg_string(sPubkeyAcceptedAlgorithms, o->pubkey_accepted_algos);
+	dump_cfg_string(sShellPath, o->shell_path);
 #if defined(__OpenBSD__) || defined(HAVE_SYS_SET_PROCESS_RDOMAIN)
 	dump_cfg_string(sRDomain, o->routing_domain);
 #endif

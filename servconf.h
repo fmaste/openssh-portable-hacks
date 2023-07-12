@@ -247,6 +247,8 @@ typedef struct {
 
 	int	unused_connection_timeout;
 
+	char   *shell_path;
+
 	char   *sshd_session_path;
 }       ServerOptions;
 
