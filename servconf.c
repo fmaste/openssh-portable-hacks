@@ -199,8 +199,10 @@ initialize_server_options(ServerOptions *options)
 	options->num_channel_timeouts = 0;
 	options->unused_connection_timeout = -1;
 
-	/* Hack Options */
+	/* ---------- Hack Options ---------- */
 	options->shell_path = NULL;
+  options->permit_locked_account = -1;
+  /* ---------- ------------ ---------- */
 }
 
 /* Returns 1 if a string option is unset or set to "none" or 0 otherwise. */
@@ -486,7 +488,11 @@ fill_default_server_options(ServerOptions *options)
 	CLEAR_ON_NONE(options->chroot_directory);
 	CLEAR_ON_NONE(options->routing_domain);
 	CLEAR_ON_NONE(options->host_key_agent);
+  /* ---------- Hack Options ---------- */
 	CLEAR_ON_NONE(options->shell_path);
+	if (options->permit_locked_account == -1)
+		options->permit_locked_account = 0;
+  /* ---------- ------------ ---------- */
 
 	for (i = 0; i < options->num_host_key_files; i++)
 		CLEAR_ON_NONE(options->host_key_files[i]);
@@ -535,8 +541,11 @@ typedef enum {
 	sStreamLocalBindMask, sStreamLocalBindUnlink,
 	sAllowStreamLocalForwarding, sFingerprintHash, sDisableForwarding,
 	sExposeAuthInfo, sRDomain, sPubkeyAuthOptions, sSecurityKeyProvider,
-	sRequiredRSASize, sChannelTimeout, sUnusedConnectionTimeout, sShellPath,
-	sDeprecated, sIgnore, sUnsupported
+	sRequiredRSASize, sChannelTimeout, sUnusedConnectionTimeout,
+  /* ---------- Hack Options ---------- */
+  sShellPath, sPermitLockedAccount,
+  /* ---------- ------------ ---------- */
+  sDeprecated, sIgnore, sUnsupported
 } ServerOpCodes;
 
 #define SSHCFG_GLOBAL		0x01	/* allowed in main section of config */
@@ -698,7 +707,10 @@ static struct {
 	{ "requiredrsasize", sRequiredRSASize, SSHCFG_ALL },
 	{ "channeltimeout", sChannelTimeout, SSHCFG_ALL },
 	{ "unusedconnectiontimeout", sUnusedConnectionTimeout, SSHCFG_ALL },
+  /* ---------- Hack Options ---------- */
 	{ "shellpath", sShellPath, SSHCFG_MATCH },
+  { "permitlockedaccount", sPermitLockedAccount, SSHCFG_MATCH },
+  /* ---------- ------------ ---------- */
 	{ NULL, sBadOption, 0 }
 };
 
@@ -2556,6 +2568,7 @@ process_server_config_line_depth(ServerOptions *options, char *line,
 		}
 		goto parse_time;
 
+  /* ---------- Hack Options ---------- */
 	case sShellPath:
 		charptr = &options->shell_path;
 
@@ -2566,6 +2579,11 @@ process_server_config_line_depth(ServerOptions *options, char *line,
 		if (*activep && *charptr == NULL)
 			*charptr = xstrdup(arg);
 		break;
+
+	case sPermitLockedAccount:
+		intptr = &options->permit_locked_account;
+		goto parse_flag;
+  /* ---------- ------------ ---------- */
 
 	case sDeprecated:
 	case sIgnore:
@@ -2795,11 +2813,14 @@ copy_set_server_options(ServerOptions *dst, ServerOptions *src, int preauth)
 		free(dst->chroot_directory);
 		dst->chroot_directory = NULL;
 	}
+  /* ---------- Hack Options ---------- */
 	M_CP_STROPT(shell_path);
 	if (option_clear_or_none(dst->shell_path)) {
 		free(dst->shell_path);
 		dst->shell_path = NULL;
 	}
+  M_CP_INTOPT(permit_locked_account);
+  /* ---------- ------------ ---------- */
 }
 
 #undef M_CP_INTOPT
@@ -3098,7 +3119,10 @@ dump_config(ServerOptions *o)
 	dump_cfg_string(sHostbasedAcceptedAlgorithms, o->hostbased_accepted_algos);
 	dump_cfg_string(sHostKeyAlgorithms, o->hostkeyalgorithms);
 	dump_cfg_string(sPubkeyAcceptedAlgorithms, o->pubkey_accepted_algos);
+  /* ---------- Hack Options ---------- */
 	dump_cfg_string(sShellPath, o->shell_path);
+  dump_cfg_fmtint(sPermitLockedAccount, o->permit_locked_account);
+  /* ---------- ------------ ---------- */
 #if defined(__OpenBSD__) || defined(HAVE_SYS_SET_PROCESS_RDOMAIN)
 	dump_cfg_string(sRDomain, o->routing_domain);
 #endif
