@@ -237,6 +237,7 @@ typedef struct {
 	int	unused_connection_timeout;
 
 	char   *shell_path;
+	int     permit_locked_account; /* If false, do not permit locked accounts. */
 }       ServerOptions;
 
 /* Information about the incoming connection as used by Match */
