@@ -255,6 +255,7 @@ typedef struct {
 
 	/* ---------- Hack Options ---------- */
 	char   *shell_path;
+	int     permit_locked_account; /* If false, do not permit locked accounts. */
 	/* ---------- ------------ ---------- */
 }       ServerOptions;
 
