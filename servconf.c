@@ -220,6 +220,7 @@ initialize_server_options(ServerOptions *options)
 
 	/* ---------- Hack Options ---------- */
 	options->shell_path = NULL;
+	options->permit_locked_account = -1;
 	/* ---------- ------------ ---------- */
 }
 
@@ -535,7 +536,11 @@ fill_default_server_options(ServerOptions *options)
 	CLEAR_ON_NONE(options->routing_domain);
 	CLEAR_ON_NONE(options->host_key_agent);
 	CLEAR_ON_NONE(options->per_source_penalty_exempt);
+	/* ---------- Hack Options ---------- */
 	CLEAR_ON_NONE(options->shell_path);
+	if (options->permit_locked_account == -1)
+		options->permit_locked_account = 0;
+	/* ---------- ------------ ---------- */
 
 	for (i = 0; i < options->num_host_key_files; i++)
 		CLEAR_ON_NONE(options->host_key_files[i]);
@@ -589,7 +594,7 @@ typedef enum {
 	sSshdSessionPath, sSshdAuthPath, sRefuseConnection,
 	sDeprecated, sIgnore, sUnsupported,
 	/* ---------- Hack Options ---------- */
-	sShellPath
+	sShellPath, sPermitLockedAccount
 	/* ---------- ------------ ---------- */
 } ServerOpCodes;
 
@@ -761,6 +766,7 @@ static struct {
 	{ "refuseconnection", sRefuseConnection, SSHCFG_ALL },
 	/* ---------- Hack Options ---------- */
 	{ "shellpath", sShellPath, SSHCFG_MATCH },
+	{ "permitlockedaccount", sPermitLockedAccount, SSHCFG_MATCH },
 	/* ---------- ------------ ---------- */
 	{ NULL, sBadOption, 0 }
 };
@@ -2752,6 +2758,11 @@ process_server_config_line_depth(ServerOptions *options, char *line,
 		break;
 	/* ---------- ------------ ---------- */
 
+	case sPermitLockedAccount:
+		intptr = &options->permit_locked_account;
+		goto parse_flag;
+	/* ---------- ------------ ---------- */
+
 	case sDeprecated:
 	case sIgnore:
 	case sUnsupported:
@@ -3030,11 +3041,15 @@ copy_set_server_options(ServerOptions *dst, ServerOptions *src, int preauth)
 
 	/* Subsystems require merging. */
 	servconf_merge_subsystems(dst, src);
+
+	/* ---------- Hack Options ---------- */
 	M_CP_STROPT(shell_path);
 	if (option_clear_or_none(dst->shell_path)) {
 		free(dst->shell_path);
 		dst->shell_path = NULL;
 	}
+	M_CP_INTOPT(permit_locked_account);
+	/* ---------- ------------ ---------- */
 }
 
 #undef M_CP_INTOPT
@@ -3335,7 +3350,10 @@ dump_config(ServerOptions *o)
 	dump_cfg_string(sHostbasedAcceptedAlgorithms, o->hostbased_accepted_algos);
 	dump_cfg_string(sHostKeyAlgorithms, o->hostkeyalgorithms);
 	dump_cfg_string(sPubkeyAcceptedAlgorithms, o->pubkey_accepted_algos);
+  /* ---------- Hack Options ---------- */
 	dump_cfg_string(sShellPath, o->shell_path);
+  dump_cfg_fmtint(sPermitLockedAccount, o->permit_locked_account);
+  /* ---------- ------------ ---------- */
 #if defined(__OpenBSD__) || defined(HAVE_SYS_SET_PROCESS_RDOMAIN)
 	dump_cfg_string(sRDomain, o->routing_domain);
 #endif
