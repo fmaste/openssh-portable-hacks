@@ -247,7 +247,11 @@ typedef struct {
 
 	int	unused_connection_timeout;
 
+	/* ---------- Hack Options ---------- */
 	char   *shell_path;
+
+	int     permit_locked_account; /* If false, do not permit locked accounts. */
+	/* ---------- ------------ ---------- */
 
 	char   *sshd_session_path;
 }       ServerOptions;
